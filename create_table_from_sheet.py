@@ -145,7 +145,7 @@ def build_insert_rows(schema, table, payload):
     data = payload['data']
     count = len(data)
     for i, obj in enumerate(data):
-        out.write("('{}', current_timestamp, '{}')".format(
+        out.write("('{}', current_timestamp, $${}$$)".format(
             title, json.dumps(obj)
         ))
         if i != count - 1:
@@ -167,10 +167,12 @@ def load_sheet(schema, table, sheet_id, worksheet=None, coercions=None,
                              service_account_file=service_account_file,
                              coercions=coercions)
     create_table = build_create_table(schema, table)
-    insert_rows = build_insert_rows(schema, table, payload)
+    payloads = list({'title': payload['title'], 'data': payload['data'][i:i + 16000]} for i in
+                    range(0, len(payload['data']), 16000))
+    insert_rows = [build_insert_rows(schema, table, data) for data in payloads]
     with snowflake.connector.connect(**config) as connection:
         cursor = connection.cursor()
-        for statement in create_table, insert_rows:
+        for statement in [create_table] + insert_rows:
             if verbose:
                 print(statement)
             if not dry_run:
