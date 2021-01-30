@@ -145,7 +145,7 @@ def build_insert_rows(schema, table, payload):
     data = payload['data']
     count = len(data)
     for i, obj in enumerate(data):
-        out.write("('{}', current_timestamp, '{}')".format(
+        out.write("('{}', current_timestamp, $${}$$)".format(
             title, json.dumps(obj)
         ))
         if i != count - 1:
